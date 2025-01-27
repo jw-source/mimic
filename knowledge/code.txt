@@ -1,0 +1,743 @@
+Functions:
+Based on the code analysis, here is a detailed list of end-user functions extracted from the `TinyTroupe` repository.
+
+```
+Function List:
+
+1. Class: TinyEnricher (enrichment.py)
+
+   - Function: enrich_content
+     - Name: enrich_content
+     - Purpose: Enriches given content by adding details and expanding on the original text, based on specified requirements and context.
+     - Parameters:
+       - requirements (str): Defines the enrichment requirements. Specifies what kind of enrichment is desired (e.g., more detail, specific format).
+       - content (str): The content to be enriched. This is the original text that the function will expand upon.
+       - content_type (str, optional):  Specifies the type of the input content (e.g., "Document"). Defaults to None. This can help guide the enrichment process to be type-appropriate.
+       - context_info (str, optional): Additional information to provide context for the enrichment process. Defaults to "". This can be used to steer the enrichment based on external context.
+       - context_cache (list, optional):  A list to potentially cache or provide past results as context. Defaults to None. Its exact usage is internal and related to managing context over multiple enrichment calls.
+       - verbose (bool, optional): If set to True, enables verbose output, such as debug messages. Defaults to False.
+     - Return Value:
+       - str: The enriched content as a string, typically in a code block format. Returns None if enrichment fails or no content is generated.
+
+2. Class: TinyStory (story.py)
+
+   - Function: start_story
+     - Name: start_story
+     - Purpose: Initiates a new story based on provided requirements, using the current simulation context and purpose. This function generates the beginning of a narrative tied to the simulation.
+     - Parameters:
+       - requirements (str, optional): Specific requirements for the story start, guiding the narrative direction. Defaults to "Start some interesting story about the agents.".
+       - number_of_words (int, optional):  Desired number of words for the story start. Defaults to 100. This parameter influences the length of the generated story beginning.
+       - include_plot_twist (bool, optional): If True, the story start will include a plot twist. Defaults to False. This can add an element of surprise or unpredictability to the narrative.
+     - Return Value:
+       - str: The starting section of the story as a string.
+
+   - Function: continue_story
+     - Name: continue_story
+     - Purpose: Extends an existing story with a new segment, maintaining coherence with the prior narrative and simulation context. This function builds upon a story already in progress.
+     - Parameters:
+       - requirements (str, optional): Specific requirements for the story continuation, guiding the narrative evolution. Defaults to "Continue the story in an interesting way.".
+       - number_of_words (int, optional): Desired number of words for the story continuation. Defaults to 100. This parameter influences the length of the generated story segment.
+       - include_plot_twist (bool, optional): If True, the story continuation will incorporate a plot twist. Defaults to False. This can introduce unexpected turns in the narrative.
+     - Return Value:
+       - str: The next segment of the story as a string.
+
+3. Class: TinyWordProcessor (tools.py)
+
+   - Function: write_document
+     - Name: write_document
+     - Purpose: Creates and saves a document using specified title and content, optionally enriching the content and exporting in multiple formats (Markdown, DOCX, JSON).
+     - Parameters:
+       - title (str): The title of the document. This is used for naming the document and as part of its metadata.
+       - content (str): The main body of the document. This is the text that constitutes the document's content, expected in Markdown format.
+       - author (str, optional): The author of the document. Defaults to None. Allows specification of document authorship.
+     - Return Value:
+       - None: This function performs an action (writing a document) and does not return a value.
+
+4. Class: Simulation (control.py)
+
+   - Function: begin
+     - Name: begin
+     - Purpose: Starts the simulation with optional configurations for caching and checkpointing. This function initializes the simulation environment, loads cache if available, and prepares for simulation execution.
+     - Parameters:
+       - cache_path (str, optional): Path to the cache file for loading and saving simulation state. If None, defaults to a default cache path.
+       - auto_checkpoint (bool, optional): If True, enables automatic checkpointing of the simulation state after each transaction. Defaults to False.
+     - Return Value:
+       - None: This function starts a process and does not return a value.
+
+   - Function: end
+     - Name: end
+     - Purpose: Finalizes the simulation, saves the current state (checkpoint), and marks the simulation as stopped. This function should be called after the simulation is complete to properly terminate and save its state.
+     - Parameters:
+       - None
+     - Return Value:
+       - None:  This function ends a process and does not return a value.
+
+   - Function: checkpoint
+     - Name: checkpoint
+     - Purpose: Saves the current state of the simulation to the cache file, allowing for later resumption. This function is useful for saving progress and creating restore points in long simulations.
+     - Parameters:
+       - None
+     - Return Value:
+       - None: This function saves data and does not return a value.
+
+5. Functions: (control.py - Convenience Functions)
+
+   - Function: begin (Convenience Function)
+     - Name: begin
+     - Purpose: Starts the default simulation or a simulation with a specific ID, with optional cache path and auto-checkpointing. This is a convenience wrapper around `Simulation.begin()` for easier initiation of simulations, particularly the default one.
+     - Parameters:
+       - cache_path (str, optional): Path to the cache file.
+       - id (str, optional):  ID of the simulation to begin. Defaults to "default". Allows management of multiple simulations if needed.
+       - auto_checkpoint (bool, optional): Enable auto-checkpointing. Defaults to False.
+     - Return Value:
+       - None: This function starts a simulation process and does not return a value.
+
+   - Function: end (Convenience Function)
+     - Name: end
+     - Purpose: Ends the current simulation or a simulation with a given ID. This is a convenience wrapper around `Simulation.end()` to easily stop simulations, especially the current or default one.
+     - Parameters:
+       - id (str, optional): ID of the simulation to end. Defaults to "default".
+     - Return Value:
+       - None: This function ends a simulation process and does not return a value.
+
+   - Function: checkpoint (Convenience Function)
+     - Name: checkpoint
+     - Purpose: Creates a checkpoint for the current simulation or a simulation with a given ID. This is a direct convenience call to `Simulation.checkpoint()` for easy state saving of simulations.
+     - Parameters:
+       - id (str, optional): ID of the simulation to checkpoint. Defaults to "default".
+     - Return Value:
+       - None: This function saves simulation state and does not return a value.
+
+6. Class: ABRandomizer (experimentation.py)
+
+   - Function: derandomize_name
+     - Name: derandomize_name
+     - Purpose: Converts a blind test name (A or B for control/treatment) back to its real name based on the randomization choices made for a specific item. This function is used post-experiment to interpret user choices in A/B tests where display names are randomized.
+     - Parameters:
+       - i (int): Index of the item being de-randomized. This index corresponds to the item when randomization was initially applied.
+       - blind_name (str): The blind name (e.g., 'A', 'B') chosen by a user during an A/B test.
+     - Return Value:
+       - str: The real name (control or treatment name) corresponding to the provided blind name for item 'i', or original name if it's a passtrough_name.
+
+7. Class: TinyPersonFactory (factory.py)
+
+   - Function: generate_person_factories
+     - Name: generate_person_factories
+     - Purpose: Generates a list of TinyPersonFactory instances, each capable of creating TinyPerson agents based on a generic context. This function is used to batch create factories, each specializing in agent generation within a specific context.
+     - Parameters:
+       - number_of_factories (int): The number of factories to generate. Determines how many distinct person factories will be created based on the provided context.
+       - generic_context_text (str): A broad context description used to guide the generation of person factory descriptions. This context is used to diversify the types of person factories created.
+     - Return Value:
+       - list: A list of TinyPersonFactory instances. Returns None if factory generation fails.
+
+   - Function: generate_person
+     - Name: generate_person
+     - Purpose: Creates a single TinyPerson instance based on the factory's defined context text and optional particularities. This function is the primary way to create customized TinyPerson agents using a factory.
+     - Parameters:
+       - agent_particularities (str, optional): Specific details or traits to further customize the generated person. Defaults to None. Allows for fine-tuning agent characteristics beyond the factory’s base context.
+       - temperature (float, optional): Controls the randomness of the agent generation; higher values mean more variance. Defaults to 1.5. Affects the creativity and variability of the generated agent's traits.
+       - attepmpts (int, optional): Number of attempts to generate a unique agent. Defaults to 10. Sets a limit on retries to generate an agent if initial attempts fail due to name collisions or other issues.
+     - Return Value:
+       - TinyPerson: A new TinyPerson instance. Returns None if agent generation fails after multiple attempts.
+
+   - Function: generate_people
+     - Name: generate_people
+     - Purpose: Generates a list of multiple TinyPerson instances in bulk, using the factory settings. This function efficiently creates multiple agents, useful for populating simulations or experiments with diverse characters.
+     - Parameters:
+       - number_of_people (int): The number of people to generate. Specifies how many TinyPerson agents are created and returned in a list.
+       - agent_particularities (str, optional): Specific details to apply to all generated people, for consistent customization. Defaults to None. Applies uniform customizations across all generated agents.
+       - temperature (float, optional): Generation randomness (higher = more random). Defaults to 1.5. Influences the variability in agent generation across the batch.
+       - attepmpts (int, optional): Max attempts to generate each person. Defaults to 10. Limits retries for each agent generated in the batch, preventing indefinite generation attempts.
+       - verbose (bool, optional): If True, enables verbose output during generation. Defaults to False. Enables detailed logging or printing of generation steps, useful for debugging or monitoring progress.
+     - Return Value:
+       - list: A list of TinyPerson instances.
+
+8. Class: ResultsExtractor (extraction.py)
+
+   - Function: extract_results_from_agents
+     - Name: extract_results_from_agents
+     - Purpose: Extracts structured results from a list of TinyPerson agents based on a given objective and situation. This function allows for batch extraction of insights across multiple agents, summarizing their collective behaviors or perspectives.
+     - Parameters:
+       - agents (List[TinyPerson]): A list of TinyPerson instances from which to extract results. Specifies all agents to be included in the batch extraction process.
+       - extraction_objective (str, optional): Defines the main goal of the data extraction, guiding what information is relevant. Defaults to None (uses default from ResultsExtractor).
+       - situation (str, optional):  Contextual description of the scenario being analyzed. Defaults to None (uses default from ResultsExtractor).
+       - fields (list, optional): A predefined list of fields to explicitly extract from the agent interactions. Defaults to None (extractor determines fields). Allows for focused extraction based on specific data points of interest.
+       - fields_hints (dict, optional): Hints for each field to guide the extraction process, providing context and examples. Defaults to None (no hints provided). Enhances extraction accuracy by providing direction to the extraction model regarding desired field content.
+       - verbose (bool, optional): If True, enables verbose output during extraction. Defaults to None (uses default from ResultsExtractor). Enables detailed logging of the extraction process for monitoring or debugging purposes.
+     - Return Value:
+       - list: A list of dictionaries, each dictionary representing the extracted results from one agent.
+
+   - Function: extract_results_from_agent
+     - Name: extract_results_from_agent
+     - Purpose: Extracts structured results from a single TinyPerson agent, focusing on its interactions history to derive insights based on a defined objective and situation. This function is for in-depth analysis of individual agent behaviors and outputs.
+     - Parameters:
+       - tinyperson (TinyPerson): The TinyPerson instance to extract results from. Specifies the target agent for data extraction.
+       - extraction_objective (str, optional): The main goal of the data extraction for this agent. Defaults to "The main points present in the agent's interactions history.". Defines what specific insights or data should be extracted.
+       - situation (str, optional): Contextual description of the scenario being analyzed for this agent. Defaults to "". Provides context to the extraction process, helping to filter and focus results.
+       - fields (list, optional): List of specific fields to extract. If None, the extractor decides. Defaults to None. Allows for targeted extraction of specific data points.
+       - fields_hints (dict, optional): Hints for the fields to guide extraction. Field names to hint strings mapping. Defaults to None. Provides cues to improve the accuracy and relevance of extracted field data.
+       - verbose (bool, optional): If True, enables verbose output during extraction. Defaults to None. Enables detailed logs of the extraction process, helpful for monitoring and debugging.
+     - Return Value:
+       - dict: A dictionary representing the extracted results from the agent, or None if extraction fails.
+
+   - Function: extract_results_from_world
+     - Name: extract_results_from_world
+     - Purpose: Extracts summarized results from a TinyWorld environment, focusing on agent interactions and activities within the world to identify key insights, based on a given objective and situation. This function offers a world-level summary of simulation outcomes.
+     - Parameters:
+       - tinyworld (TinyWorld): The TinyWorld instance to extract results from. Specifies the target environment for data extraction.
+       - extraction_objective (str, optional): The main goal of the data extraction from the environment, guiding what is considered important. Defaults to "The main points that can be derived from the agents conversations and actions.". Defines the overall objective for summarizing the world's simulation data.
+       - situation (str, optional): Contextual description of the scenario within the world being analyzed. Defaults to "". Provides context to help focus the extraction of relevant world-level insights.
+       - fields (list, optional): Specific fields to extract. If None, the extractor decides. Defaults to None. Allows for targeted extraction of particular data points or categories from the world's data.
+       - fields_hints (dict, optional): Hints for each field to guide the extraction process. Field names to hint strings mapping. Defaults to None. Provides cues to enhance the accuracy and relevance of extracted field data.
+       - verbose (bool, optional): If True, enables verbose output during extraction. Defaults to None. Enables detailed logging of the extraction process at the world level.
+     - Return Value:
+       - dict: A dictionary representing the extracted results from the world, or None if extraction fails.
+
+   - Function: save_as_json
+     - Name: save_as_json
+     - Purpose: Saves the most recent extraction results (agent and world extractions) to a JSON file for persistent storage and later analysis. This function allows exporting extraction results for external processing or archiving.
+     - Parameters:
+       - filename (str): The path and name of the file to save the JSON output. Specifies where and under what name the extraction results should be stored.
+       - verbose (bool, optional): If True, prints a message after saving is complete. Defaults to False. Provides user feedback on the saving operation.
+     - Return Value:
+       - None: This function saves data to file and does not return a value.
+
+9. Class: ArtifactExporter (extraction.py)
+
+   - Function: export
+     - Name: export
+     - Purpose: Exports artifact data (dictionary or string) to a specified format (JSON, TXT, DOCX) within a structured folder system, based on content type and artifact name. This function serves as a versatile tool for saving simulation outputs, reports, or agent-generated content in various formats.
+     - Parameters:
+       - artifact_name (str): Name of the artifact, used to create the output file name. This name is used to identify and organize the exported data.
+       - artifact_data (Union[dict, str]): The data to be exported itself. Can be a dictionary or a string. Specifies the content that will be saved.
+       - content_type (str): Categorization of the content, used for subdirectory organization. This categorization helps sort and group exported artifacts logically by type.
+       - content_format (str, optional): Original format of the artifact content (e.g., "md", "csv") for DOCX conversion. Defaults to None. Informs the exporter about the original format, especially relevant for format conversions like Markdown to DOCX.
+       - target_format (str, optional): The format to export the artifact data to, e.g., "json", "txt", "docx". Defaults to "txt". Defines the output file format.
+       - verbose (bool, optional): If True, enables detailed logging of the export process. Defaults to False. Provides feedback on the export operation and can be useful for debugging.
+     - Return Value:
+       - None: This function exports data to a file and does not return a value.
+
+10. Class: Normalizer (extraction.py)
+
+    - Function: normalize
+      - Name: normalize
+      - Purpose: Normalizes a single element or a list of elements into a standardized category, using a pre-computed set of normalized categories. This function is useful for standardizing terms, concepts, or phrases, mapping variations to a consistent set of representations.
+      - Parameters:
+        - element_or_elements (Union[str, List[str]]): The element(s) to be normalized. Can be a single string or a list of strings. Specifies the input to be standardized.
+      - Return Value:
+        - Union[str, List[str]]: The normalized element or list of normalized elements, maintaining input type. Returns the standardized form of the input, either a string or list of strings depending on input type.
+
+11. Class: TinyPerson (agent.py)
+
+    - Function: listen_and_act
+      - Name: listen_and_act
+      - Purpose: Combines receiving a speech stimulus and then acting in response within a single function call. This function provides a convenient shortcut for sequential stimulus processing and action generation.
+      - Parameters:
+        - speech (str): The speech stimulus to be processed by the agent.  Provides the agent with verbal input to react to.
+        - return_actions (bool, optional): If True, returns the list of actions performed by the agent. Defaults to False. Allows retrieval of the specific actions taken in response to the stimulus, useful for detailed analysis or programmatic decision-making.
+        - max_content_length (int, optional): Maximum length of content to display in communications. Defaults to default["max_content_display_length"]. Controls verbosity in communication logs, truncating long content for readability if needed.
+      - Return Value:
+        - list (optional): If `return_actions` is True, returns a list of actions performed; otherwise, returns None.
+
+    - Function: see_and_act
+      - Name: see_and_act
+      - Purpose: Combines perceiving a visual stimulus and then acting based on that perception in a single function. Similar to `listen_and_act`, but for visual inputs, streamlining visual stimulus response.
+      - Parameters:
+        - visual_description (str): The visual stimulus description perceived by the agent. Provides visual input for agent processing and reaction.
+        - return_actions (bool, optional): If True, returns the list of actions performed by the agent. Defaults to False. Allows retrieval of actions, similar to `listen_and_act`.
+        - max_content_length (int, optional): Maximum length for displayed communication content. Defaults to default["max_content_display_length"]. Controls output verbosity, same as in `listen_and_act`.
+      - Return Value:
+        - list (optional): If `return_actions` is True, returns a list of actions; otherwise, returns None.
+
+    - Function: think_and_act
+      - Name: think_and_act
+      - Purpose: Integrates internal thinking with subsequent action, in one step. This function allows agents to perform a deliberate thought process followed immediately by actions derived from their reflection.
+      - Parameters:
+        - thought (str): The thought stimulus for the agent to process internally. Represents an internal input or reflection.
+        - return_actions (bool, optional): If True, returns the list of actions performed. Defaults to False. Similar action retrieval capability as other `_*and_act` methods.
+        - max_content_length (int, optional): Maximum display length for communication content. Defaults to default["max_content_display_length"]. Verbosity control, same as in other `_*and_act` methods.
+      - Return Value:
+        - list (optional): If `return_actions` is True, returns a list of actions performed; otherwise, returns None.
+
+    - Function: read_documents_from_folder
+      - Name: read_documents_from_folder
+      - Purpose: Loads all documents from a specified folder into the agent's semantic memory, enabling the agent to access and utilize the information in these documents. This is crucial for grounding agent knowledge and providing context from external documents.
+      - Parameters:
+        - documents_path (str): The file path to the folder containing documents. Specifies the location of the document directory to be processed.
+      - Return Value:
+        - None: This function loads data into memory and does not return a value.
+
+    - Function: read_document_from_file
+      - Name: read_document_from_file
+      - Purpose: Loads a single document from a specified file path into the agent's semantic memory. This is for importing individual documents for agent knowledge grounding, similar to `read_documents_from_folder` but for single files.
+      - Parameters:
+        - file_path (str): The path to the document file. Specifies the location of the document file to be loaded.
+      - Return Value:
+        - None: This function loads data into memory and does not return a value.
+
+    - Function: read_documents_from_web
+      - Name: read_documents_from_web
+      - Purpose: Fetches and loads content from multiple web URLs into the agent's semantic memory, allowing the agent to incorporate live web-based information. Enables agents to access and learn from online resources.
+      - Parameters:
+        - web_urls (list): A list of web URLs to be read. Specifies the online locations from which web content will be fetched and processed.
+      - Return Value:
+        - None: This function loads data into memory and does not return a value.
+
+    - Function: read_document_from_web
+      - Name: read_document_from_web
+      - Purpose: Fetches and loads content from a single web URL into the agent's semantic memory. Similar to `read_documents_from_web` but for individual webpages.
+      - Parameters:
+        - web_url (str): The web URL to be read. Specifies the online location of the webpage to be loaded.
+      - Return Value:
+        - None:  This function loads data into memory and does not return a value.
+
+12. Class: TinyWorld (environment.py)
+
+    - Function: run
+      - Name: run
+      - Purpose: Executes the simulation environment for a specified number of steps, advancing the simulation timeline and agent actions within each step. This function drives the primary simulation loop, progressing the world and its agents through time.
+      - Parameters:
+        - steps (int): The number of simulation steps to execute. Defines the duration of the simulation run in steps.
+        - timedelta_per_step (timedelta, optional): Time increment for each step. Defaults to None. Controls the passage of time within the simulation by advancing the environment's clock at each step.
+        - return_actions (bool, optional): If True, returns all actions performed during the simulation. Defaults to False. Allows for comprehensive logging of simulation activity, capturing all actions taken by agents.
+      - Return Value:
+        - list (optional): If `return_actions` is True, returns a list of all actions performed during the simulation, formatted as [{agent_name: [action_1, action_2, ...]}, ...]; otherwise, returns None.
+
+    - Function: skip
+      - Name: skip
+      - Purpose: Advances the simulation time forward by a specified number of steps without executing agent actions, useful for fast-forwarding through periods of inactivity or low interest within the simulation.
+      - Parameters:
+        - steps (int): Number of steps to skip. Defines how many time steps to advance without agent activity.
+        - timedelta_per_step (timedelta, optional): time increment for each step skipped. Defaults to None. Controls the time jump for each skipped step, maintaining time consistency.
+      - Return Value:
+        - None: This function fast-forwards simulation time and does not return a value.
+
+    - Function: run_minutes
+      - Name: run_minutes
+      - Purpose: Runs the simulation for a specified duration in real-time minutes, simplifying time-based simulation control. This function is a convenience wrapper for time-based simulation duration.
+      - Parameters:
+        - minutes (int): The number of minutes to run the simulation. Specifies the real-time duration of the simulation run.
+      - Return Value:
+        - None: This function runs the simulation and does not return a value.
+
+    - Function: skip_minutes
+      - Name: skip_minutes
+      - Purpose: Skips forward in the simulation timeline by a specified number of minutes, similar to time-skipping in real-time units. Convenience function for time-based skipping.
+      - Parameters:
+        - minutes (int): The number of minutes to skip. Specifies the real-time duration to fast forward the simulation.
+      - Return Value:
+        - None: This function fast-forwards simulation time and does not return a value.
+
+    - Function: run_hours, skip_hours, run_days, skip_days, run_weeks, skip_weeks, run_months, skip_months, run_years, skip_years
+      - Name: run_hours, skip_hours, run_days, skip_days, run_weeks, skip_weeks, run_months, skip_months, run_years, skip_years
+      - Purpose: Convenience functions analogous to `run_minutes` and `skip_minutes` but for hours, days, weeks, months, and years.
+      - Parameters:
+        - hours (int), days (int), weeks (int), months (int), years (int): duration or time to skip, respectively.
+      - Return Value:
+        - None: These functions control simulation time and do not return values.
+
+13. Class: Profiler (profiling.py)
+
+    - Function: profile
+      - Name: profile
+      - Purpose: Computes attribute distributions for a list of agents, to summarize population characteristics. This function takes a list of agent configurations and computes statistical distributions for specified attributes across the agent population.
+      - Parameters:
+        - agents (List[dict]): A list of agent configurations (represented as dictionaries) to be profiled. Specifies the agents whose attributes distribution is to be computed.
+      - Return Value:
+        - dict: A dictionary containing attribute distributions as Pandas DataFrames. attribute name -> Pandas DataFrame mapping, where each DataFrame contains the distribution data for the corresponding attribute.
+
+    - Function: render
+      - Name: render
+      - Purpose: Plots the computed attribute distributions, visualizing agent population profiles. This function generates plots for each attribute distribution previously computed by the `profile` function, using matplotlib.
+      - Parameters:
+        - None
+      - Return Value:
+        - None: This function displays plots and does not return a value.
+
+14. Class: TinyPersonValidator (validation.py)
+
+    - Function: validate_person
+      - Name: validate_person
+      - Purpose: Validates a TinyPerson agent's characteristics and behavior against given expectations using an LLM-based validation process. This function provides an automated method to assess agent consistency and alignment with specified criteria.
+      - Parameters:
+        - person (TinyPerson): The TinyPerson agent instance to be validated. Specifies the agent to be evaluated.
+        - expectations (str, optional): Textual description of expected agent characteristics and behaviors. Defaults to None. Provides the validation criteria against which the agent is assessed.
+        - include_agent_spec (bool, optional): If True, includes the agent specification in the validation prompt for context. Defaults to True. Enhances validation by providing the LLM with detailed agent configuration information.
+        - max_content_length (int, optional): Maximum text length to display in communications during validation. Defaults to default_max_content_display_length. Controls verbosity in communication logs during validation process.
+      - Return Value:
+        - tuple[float, str]: A tuple containing the validation score (float between 0.0 and 1.0) and a justification string. Score indicates validation confidence, justification explains the score. Returns (None, None) if validation fails.
+```
+
+This list should provide a comprehensive overview of the end-user functions available in the `TinyTroupe` repository based on the provided code structure.
+
+Examples:
+```python
+from tinytroupe.agent import TinyPerson
+from tinytroupe.environment import TinyWorld
+
+# Create a TinyWorld instance
+world = TinyWorld()
+
+# Create two TinyPerson instances
+alice = TinyPerson(name="Alice")
+bob = TinyPerson(name="Bob")
+
+# Add agents to the world
+world.add_agent(alice)
+world.add_agent(bob)
+
+# Make agents accessible to each other (they "know" each other)
+world.make_everyone_accessible()
+
+# Start a conversation
+alice.listen_and_act("Hi Bob, how are you today?")
+bob.listen_and_act("Hi Alice, I'm doing great, thanks for asking! How about you?")
+alice.listen_and_act("I'm doing well too. Did you manage to finish that report?")
+bob.listen_and_act("Yes, I did! It was quite challenging, but I finally got it done.")
+alice.listen_and_act("That's great to hear! Congratulations!")
+bob.listen_and_act("Thanks! So, what are you working on right now?")
+alice.listen_and_act("I'm currently working on a new marketing campaign. It's quite exciting!")
+bob.listen_and_act("That sounds interesting! Tell me more about it.")
+
+# Run the simulation for a few more steps
+world.run(steps=3)
+```
+```python
+from tinytroupe.agent import TinyPerson, TinyToolUse
+from tinytroupe.environment import TinyWorld
+from tinytroupe.tools import TinyWordProcessor, ArtifactExporter, TinyEnricher
+
+# Initialize artifact exporter and enricher
+exporter = ArtifactExporter(base_output_folder="./tool_usage_outputs/")
+enricher = TinyEnricher()
+
+# Initialize word processor tool with exporter and enricher
+word_processor_tool = TinyWordProcessor(exporter=exporter, enricher=enricher)
+
+# Initialize tool use faculty with the word processor tool
+tool_use_faculty = TinyToolUse(tools=[word_processor_tool])
+
+# Create Lisa, the Data Scientist agent
+lisa = TinyPerson(name="Lisa")
+
+# Add tool use faculty to Lisa
+lisa.add_mental_faculties([tool_use_faculty])
+
+# Get user requirements and ask Lisa to write a document using the word processor tool
+requirements = "You need to write a document about the current trends in digital marketing. You should include a table of contents and at least three sections with detailed information."
+lisa.listen_and_act(requirements)
+
+# Lisa acts until she is done writing the document
+lisa.act()
+
+print("Document writing process completed. Check the output in the 'tool_usage_outputs' directory.")
+```
+```python
+from tinytroupe.agent import TinyPerson, TinyToolUse
+from tinytroupe.environment import TinyWorld
+from tinytroupe.tools import TinyWordProcessor, ArtifactExporter, TinyEnricher
+
+# Initialize artifact exporter and enricher
+exporter = ArtifactExporter(base_output_folder="./interview_outputs/")
+enricher = TinyEnricher()
+
+# Initialize word processor tool with exporter and enricher
+word_processor_tool = TinyWordProcessor(exporter=exporter, enricher=enricher)
+
+# Initialize tool use faculty with the word processor tool
+tool_use_faculty = TinyToolUse(tools=[word_processor_tool])
+
+# Create agents for the interview scenario: interviewer and customer
+interviewer = TinyPerson(name="Interviewer")
+customer = TinyPerson(name="Customer")
+
+# Add tool use faculty to the interviewer
+interviewer.add_mental_faculties([tool_use_faculty])
+
+# Create a TinyWorld environment and add agents
+world = TinyWorld(agents=[interviewer, customer])
+world.make_everyone_accessible()
+
+# Set the interview scenario and instructions for the interviewer
+interview_scenario = "You are conducting a customer interview to understand their needs and pain points with bottled gazpacho. You need to write a summary of the interview as a document."
+interview_instructions = "Conduct a customer interview about bottled gazpacho. After the interview, write a summary of the interview as a document titled 'Customer Interview Summary'."
+interviewer.define("occupation_description", interview_scenario)
+interviewer.listen_and_act(interview_instructions)
+
+# Start the interview by having the interviewer talk to the customer
+interviewer.listen_and_act(f"Hello {customer.name}, thank you for agreeing to be interviewed today.")
+
+# Customer responds to the interviewer's greeting
+customer.listen_and_act(f"Hello {interviewer.name}, happy to be here.")
+
+# Interviewer asks a question and interviewer and customer continue the conversation
+interviewer.listen_and_act("What do you think about bottled gazpacho?")
+customer.listen_and_act("I've never tried it.")
+interviewer.listen_and_act("Oh really? What are your impressions of gazpacho in general?")
+customer.listen_and_act("Well, I like cold soups, especially in the summer.")
+interviewer.listen_and_act("That's great to know. What do you usually look for when buying food products at the supermarket?")
+customer.listen_and_act("I usually check the ingredients and nutritional information. I prefer natural and healthy products.")
+interviewer.listen_and_act("Excellent. And what about convenience foods? Do you buy them often?")
+customer.listen_and_act("Sometimes, when I'm too busy to cook. But I always try to choose healthy options.")
+interviewer.listen_and_act("Understood. Considering your preferences, would you be willing to try bottled gazpacho?")
+customer.listen_and_act("Maybe, if it's made with good ingredients and has a good flavor.")
+interviewer.listen_and_act("That's helpful feedback. Is there anything else you'd like to share about your food preferences or habits?")
+customer.listen_and_act("I'm trying to eat more plant-based meals, so if the gazpacho is vegan, that would be a plus.")
+
+# Interviewer concludes the interview and writes a summary document
+interviewer.listen_and_act("Thank you so much for your time and insights! This has been very helpful.")
+interviewer.act()
+
+print("Interview process completed. Check the interview summary in the 'interview_outputs' directory.")
+```
+```python
+from tinytroupe.agent import TinyPerson
+from tinytroupe.environment import TinyWorld
+from tinytroupe.factory import TinyPersonFactory
+from tinytroupe.extraction import ArtifactExporter
+
+# Initialize artifact exporter
+exporter = ArtifactExporter(base_output_folder="./synthetic_data_outputs/")
+
+# Create a TinyPersonFactory
+factory = TinyPersonFactory(context_text="A person interested in technology and synthetic data generation.")
+
+# Set the number of people to generate and the number of attributes per person
+number_of_people = 5
+number_of_attributes = 3
+
+# Generate people
+people = factory.generate_people(number_of_people=number_of_people)
+
+# Extract synthetic data from generated people
+print("Extracting synthetic data from generated people...")
+synthetic_data = []
+for person in people:
+    person_data = {}
+    person_data["name"] = person.name
+    person_data["minibio"] = person.minibio()
+    person_data["age"] = person.get("age")
+    person_data["nationality"] = person.get("nationality")
+    person_data["occupation"] = person.get("occupation")
+    synthetic_data.append(person_data)
+
+# Export synthetic data to CSV
+import csv
+output_file = f"{exporter.base_output_folder}/synthetic_data_generation.out.csv"
+with open(output_file, mode='w', newline='', encoding='utf-8') as csvfile:
+    fieldnames = synthetic_data[0].keys()
+    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+    writer.writeheader()
+    for data in synthetic_data:
+        writer.writerow(data)
+
+print(f"Synthetic data generation completed. Check the output in the '{exporter.base_output_folder}' directory.")
+```
+```python
+from tinytroupe.agent import TinyPerson, TinyToolUse
+from tinytroupe.environment import TinyWorld
+from tinytroupe.tools import TinyWordProcessor, ArtifactExporter, TinyEnricher
+
+# Initialize artifact exporter and enricher
+exporter = ArtifactExporter(base_output_folder="./advertisement_outputs/")
+enricher = TinyEnricher()
+
+# Initialize word processor tool with exporter and enricher
+word_processor_tool = TinyWordProcessor(exporter=exporter, enricher=enricher)
+
+# Initialize tool use faculty with the word processor tool
+tool_use_faculty = TinyToolUse(tools=[word_processor_tool])
+
+# Create Lisa, the Data Scientist agent
+lisa = TinyPerson(name="Lisa")
+
+# Add tool use faculty to Lisa
+lisa.add_mental_faculties([tool_use_faculty])
+
+# Set advertisement requirements and ask Lisa to write an advertisement for an online travel agency
+advertisement_requirements = "You need to write an online advertisement for a travel agency that specializes in European tours. The ad should be for a 'Europe Travel Package', targeting people interested in culture, history and adventure."
+lisa.listen_and_act(advertisement_requirements)
+
+# Lisa acts until she is done writing the advertisement
+lisa.act()
+
+print("Advertisement writing process completed. Check the advertisement in the 'advertisement_outputs' directory.")
+```
+```python
+from tinytroupe.agent import TinyPerson, TinyToolUse
+from tinytroupe.environment import TinyWorld
+from tinytroupe.tools import TinyWordProcessor, ArtifactExporter, TinyEnricher
+
+# Initialize artifact exporter and enricher
+exporter = ArtifactExporter(base_output_folder="./apartment_ad_outputs/")
+enricher = TinyEnricher()
+
+# Initialize word processor tool with exporter and enricher
+word_processor_tool = TinyWordProcessor(exporter=exporter, enricher=enricher)
+
+# Initialize tool use faculty with the word processor tool
+tool_use_faculty = TinyToolUse(tools=[word_processor_tool])
+
+# Create Marcos, the Physician agent
+marcos = TinyPerson(name="Marcos")
+
+# Add tool use faculty to Marcos
+marcos.add_mental_faculties([tool_use_faculty])
+
+# Set advertisement requirements and ask Marcos to write an advertisement for an apartment
+advertisement_requirements = "You need to write an advertisement for an apartment for rent. The apartment is located in a great area for students."
+marcos.listen_and_act(advertisement_requirements)
+
+# Marcos acts until he is done writing the advertisement
+marcos.act()
+
+print("Advertisement writing process completed. Check the advertisement in the 'apartment_ad_outputs' directory.")
+```
+```python
+from tinytroupe.agent import TinyPerson
+from tinytroupe.environment import TinyWorld
+from tinytroupe.factory import TinyPersonFactory
+from tinytroupe.extraction import ResultsExtractor
+
+# Create a TinyWorld and set the scenario
+world = TinyWorld("Market Research Workshop")
+world.broadcast(\
+"""
+This is a market research workshop. We are brainstorming ideas for new flavors of bottled gazpacho.
+Please come up with some ideas, considering that gazpacho is a cold soup, usually tomato-based.
+"""
+)
+
+# Create a TinyPersonFactory for workshop participants
+participant_factory = TinyPersonFactory(context_text="A creative person participating in a brainstorming workshop.")
+
+# Generate participants
+participants = participant_factory.generate_people(number_of_people=3)
+
+# Add participants to the world
+world.add_agents(participants)
+
+# Make participants accessible to each other
+world.make_everyone_accessible()
+
+# Run the brainstorming session for a few steps
+world.run(steps=3)
+
+# Initialize ResultsExtractor
+extractor = ResultsExtractor()
+
+# Extract results from the world (all agents)
+extraction_objective = "Extract all ideas for new bottled gazpacho flavors that the agents came up with."
+situation = "The agents are brainstorming new flavors for bottled gazpacho."
+fields = ["flavor_ideas"] # Define the fields to extract
+results_from_world = extractor.extract_results_from_world(world, extraction_objective=extraction_objective, situation=situation, fields=fields)
+
+# Print and save the extraction results
+print(f"Extracted Results from World: {results_from_world}")
+extractor.save_as_json(filename=f"market_research_workshop_ideas.extraction.json")
+
+print("Market research workshop and extraction completed. Check the extraction results in 'market_research_workshop_ideas.extraction.json'.")
+```
+```python
+from tinytroupe.agent import TinyPerson, TinyToolUse
+from tinytroupe.environment import TinyWorld
+from tinytroupe.tools import TinyWordProcessor, ArtifactExporter, TinyEnricher
+
+# Initialize artifact exporter and enricher
+exporter = ArtifactExporter(base_output_folder="./agent_creation_outputs/")
+enricher = TinyEnricher()
+
+# Initialize word processor tool with exporter and enricher
+word_processor_tool = TinyWordProcessor(exporter=exporter, enricher=enricher)
+
+# Initialize tool use faculty with the word processor tool
+tool_use_faculty = TinyToolUse(tools=[word_processor_tool])
+
+# Create a TinyPersonFactory to generate agents
+factory = TinyPersonFactory(context_text="A person interested in simulation and agent creation.")
+
+# Generate agents
+agent_1 = factory.generate_person(agent_particularities="Has a passion for AI and agent-based modeling.")
+agent_2 = factory.generate_person(agent_particularities="Prefers practical applications of AI over theoretical research.")
+
+# Add tool use faculty to the agents
+agent_1.add_mental_faculties([tool_use_faculty])
+agent_2.add_mental_faculties([tool_use_faculty])
+
+# Set agent descriptions (optional, for context)
+agent_1_description = "Agent 1 is passionate about AI and agent-based modeling. He needs to write a document describing his passions."
+agent_2_description = "Agent 2 prefers practical applications of AI and agent-based modeling. He needs to write a document describing his preferences."
+agent_1.define("occupation_description", agent_1_description)
+agent_2.define("occupation_description", agent_2_description)
+
+# Ask agents to write documents describing themselves
+agent_1.listen_and_act("Write a document describing your passions for AI and agent-based modeling. Title it 'My Passions'.")
+agent_2.listen_and_act("Write a document describing your preferences for practical applications of AI over theoretical research. Title it 'My Preferences'.")
+
+# Agents act until they are done writing the documents
+agent_1.act()
+agent_2.act()
+
+print("Agent creation and document writing processes completed. Check the documents in the 'agent_creation_outputs' directory.")
+```
+```python
+from tinytroupe.agent import TinyPerson, TinyToolUse
+from tinytroupe.environment import TinyWorld
+from tinytroupe.tools import TinyWordProcessor, ArtifactExporter, TinyEnricher
+
+# Initialize artifact exporter and enricher
+exporter = ArtifactExporter(base_output_folder="./product_brainstorming_outputs/")
+enricher = TinyEnricher()
+
+# Initialize word processor tool with exporter and enricher
+word_processor_tool = TinyWordProcessor(exporter=exporter, enricher=enricher)
+
+# Initialize tool use faculty with the word processor tool
+tool_use_faculty = TinyToolUse(tools=[word_processor_tool])
+
+# Create Lisa, the Data Scientist agent
+lisa = TinyPerson(name="Lisa")
+
+# Add tool use faculty to Lisa
+lisa.add_mental_faculties([tool_use_faculty])
+
+# Set brainstorming requirements and ask Lisa to brainstorm new product ideas for a new AI-powered kitchen appliance
+brainstorming_requirements = "You need to brainstorm product ideas and write a document about new product ideas for a new, AI-powered kitchen appliance. Include at least 5 distinct ideas for different potential products."
+lisa.listen_and_act(brainstorming_requirements)
+
+# Lisa acts until she is done brainstorming and writing the document
+lisa.act()
+
+print("Product brainstorming process completed. Check the brainstorming document in the 'product_brainstorming_outputs' directory.")
+```
+```python
+from tinytroupe.agent import TinyPerson, TinyToolUse
+from tinytroupe.environment import TinyWorld
+from tinytroupe.tools import TinyWordProcessor, ArtifactExporter, TinyEnricher
+
+# Initialize artifact exporter and enricher
+exporter = ArtifactExporter(base_output_folder="./tv_ad_outputs/")
+enricher = TinyEnricher()
+
+# Initialize word processor tool with exporter and enricher
+word_processor_tool = TinyWordProcessor(exporter=exporter, enricher=enricher)
+
+# Initialize tool use faculty with the word processor tool
+tool_use_faculty = TinyToolUse(tools=[word_processor_tool])
+
+# Create Marcos, the Physician agent
+marcos = TinyPerson(name="Marcos")
+
+# Add tool use faculty to Marcos
+marcos.add_mental_faculties([tool_use_faculty])
+
+# Set advertisement requirements and ask Marcos to write an advertisement for TV, for a new brand of bottled gazpacho
+advertisement_requirements = "You need to write an advertisement for TV, for a new brand of bottled gazpacho, targeting families."
+marcos.listen_and_act(advertisement_requirements)
+
+# Marcos acts until he is done writing the advertisement
+marcos.act()
+
+print("Advertisement writing process completed. Check the advertisement in the 'tv_ad_outputs' directory.")
+```

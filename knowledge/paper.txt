@@ -1,0 +1,59 @@
+Here is the extraction of the experimental design from the provided research paper:
+
+1.  **Goal and purpose of the experiment**:
+    *   **Goal**: To explore the potential of large language models (LLMs) to conduct market experiments and understand their capability to comprehend competitive market dynamics.
+    *   **Purpose**: To assess whether LLMs, acting as market agents in a controlled double auction experimental setting, can converge toward competitive market equilibria, similar to human traders.  The study aims to evaluate the ability of ChatGPT-4.0 to replicate dynamic decision-making in market scenarios and contribute to the understanding of AI-driven economic market behavior.
+
+2.  **Independent variables and their ranges/values used**:
+    *   The paper does not explicitly list manipulated independent variables in the traditional sense of comparing different treatments. The core "independent variable" being investigated is the **type of agent**:  **LLM (ChatGPT-4.0)**.  However, it's compared against a baseline of *human* trading behavior from prior research [2].
+    *   **Values within the experiment**: The "independent variable" in this sense is fixed to using ChatGPT-4.0.  There are no ranges or values of independent variables manipulated *within* the LLM experiment itself, but the experiment is designed to see if LLMs can mimic human behavior in a market setting. The *conditions* (described below) are more like fixed settings within the LLM agent experiment rather than variations of an independent variable.
+
+3.  **Dependent variables and how they were measured**:
+    *   **Dependent variables**:
+        *   **Transaction prices**: The prices at which trades occurred during each round.
+        *   **Coefficient of convergence**:  A metric calculated for each trading period, reflecting the deviation of transaction prices from the theoretical equilibrium price.  The exact calculation method for the coefficient of convergence is not provided in detail but is implied to measure deviation from the equilibrium.
+        *   **Exchange quantity**: The number of transactions that occurred in each trading period.  (While mentioned in Table 1 related to predictions, the focus in the results narrative and analysis is more on price convergence.  Actual vs Predicted exchange quantity also shows if LLM market met the prediction.)
+    *   **Measurement**:
+        *   Transaction prices and exchange quantities were directly recorded from the simulated double auction process involving ChatGPT-4.0 agents.
+        *   The coefficient of convergence was calculated based on the observed transaction prices and the predicted equilibrium price of $2.00.
+
+4.  **Control variables and their fixed values**:
+    *   **Market structure**: Double auction mechanism was consistently used.
+    *   **Number of participants**: 11 buyers and 11 sellers were used throughout the five rounds, with identities unchanged.
+    *   **Number of rounds**: Five trading rounds (days) were conducted, consistent with the original human experiments [2].
+    *   **Value cards**: The range of values on cards given to participants (buyers and sellers) remained constant (between 0.75 and 3.25).
+    *   **Information sharing**:  Previous day's transaction price was always shared at the start of each trading day, and updated transaction details were communicated to all participants after each transaction.
+    *   **Transaction rule**: A transaction occurs when a buyer's bid price is greater than or equal to a seller's asking price (or vice versa), and each participant is allowed one transaction per day.
+    *   **Prompting method**: The three-step prompting approach (Initialization, Price Posting and Matching, Final Call) was consistently applied across all rounds and participants.
+
+5.  **Experimental conditions and their specific parameters**:
+    *   **Experimental Condition**:  LLM-driven double auction market simulation.
+    *   **Specific parameters**:
+        *   **Agent Type**: ChatGPT-4.0 was used for all 22 participants (11 buyers, 11 sellers).
+        *   **Market Rules**:  Double auction rules as described in Section 2.2 and adapted from [2].
+        *   **Trading days**: 5 rounds (trading days).
+        *   **Value distribution**: Cards with values between 0.75 and 3.25 assigned to buyers (cash) and sellers (cost).
+        *   **Equilibrium Price**: Theoretically predicted to be $2.00 based on predefined demand and supply curves (Figure 2).
+        *   **Interaction Protocol**:  The three-step prompting process (Figure 1) to guide LLM agent behavior in posting and accepting prices.
+
+6.  **Number of trials/iterations/samples**:
+    *   The experiment consisted of **five trading periods (rounds/days)**.
+    *   Within each trading period, there were multiple iterations of price posting and matching attempts until a transaction occurred (up to one per participant) or the "final call" ended the trading day for that round.
+    *   Essentially, each 'trading day' is a sample, and there are 5 such samples in this experiment.
+
+7.  **Any specific thresholds or cutoff values used**:
+    *   **Final Call**: After three "final call" prompts with no updates to prices, the trading day ended. This acts as a cutoff to limit the duration of each trading round and to simulate an end to trading for the day if no more activity occurs.
+    *   **Transaction criterion**: A transaction occurs if a buyer's bid is greater than or equal to a seller's ask (or vice versa). This is the fundamental cutoff for a trade to happen.
+
+8.  **Qualitative and quantitative results of the experiment, including their significance and interpretation**:
+    *   **Quantitative Results**:
+        *   Transaction prices fluctuated around the theoretical equilibrium price of $2.00 across the five trading periods (Table 1, Figure 3).
+        *   The coefficient of convergence varied greatly across periods, ranging from 2.67 to 20.00, indicating high variability and a lack of consistent convergence.
+        *   Average actual exchange prices in each period were slightly above the predicted equilibrium price of $2.00 (Table 1).
+
+    *   **Qualitative Results & Interpretation**:
+        *   **Lack of Convergence**:  Unlike human experiments where prices typically converge towards the equilibrium, LLMs in this experiment did not show such convergence. Prices fluctuated without a clear stabilizing trend.
+        *   **LLM limitations**: The experiment suggests that current LLMs (like ChatGPT-4.0) lack the adaptive learning capabilities and real-time feedback integration necessary to mimic human trading behavior effectively and achieve market equilibrium.
+        *   **Algorithmic Rigidity**:  LLMs' static model compared to human's adaptive learning and strategy adjustments is highlighted as a potential reason for the lack of convergence.  Human traders adjust strategies based on market feedback, while LLMs in this setup operate with a more fixed algorithmic approach.
+        *   **Absence of Psychological Factors**: The paper also points out the absence of psychological factors (like fear and greed) in LLM decision-making compared to humans, which could contribute to the difference in market behavior.
+        *   **Significance**: The results indicate that while LLMs can be used for scalable market simulations, their current limitations prevent them from fully capturing the complexities of market behavior, particularly the dynamic convergence toward equilibrium observed in human markets.  This suggests a need for further development in AI models to incorporate adaptive learning and behavioral aspects for more accurate economic simulations.
