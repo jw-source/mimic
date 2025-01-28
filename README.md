@@ -1,22 +1,28 @@
 # Mimic
 
-#### Create a venv
-```
+#### 1. Project Setup
+```python
 python3.11 -m venv venv
-```
-#### Activate the venv
-```
 source venv/bin/activate
-```
-#### Install python packages
-```
 pip install -r requirements.txt
 ```
-#### Convert .env.txt file to .env (add Gemini & OpenAI API keys)
+#### 2. Convert .env.txt file to .env (add OpenRouter and OpenAI API keys)
 ```
 mv .env.txt .env
 ```
-#### Run the run.py file
+
+#### 3. Set up Modal (for virtual sandbox to execute code)
+##### 4. Sign up for a free account at https://modal.com/signup
+```
+pip install modal
+modal setup
+```
+
+#### 5. Download your research paper to simulate and move it to the knowledge folder (paper.pdf)
+
+#### 6. Get the url of the framework you're interested in (e.g., TinyTroupe), and copy the url to the run.py file
+
+#### 7. Run the run.py file
 ```
 python run.py
 ```

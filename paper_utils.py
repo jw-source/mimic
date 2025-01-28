@@ -2,15 +2,12 @@ from openai import OpenAI
 import pdfplumber
 import os
 from dotenv import load_dotenv
-import requests
-from io import BytesIO
 
-def paper_run(url):
+def paper_run():
     print("Extracting experimental design")
     load_dotenv()
     client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=os.getenv("OPENROUTER_API_KEY"))
-    response = requests.get(url)
-    pdf = pdfplumber.open(BytesIO(response.content))
+    pdf = pdfplumber.open("knowledge/paper.pdf")
     paper_content = ""
     for page in pdf.pages:
         paper_content += page.extract_text()

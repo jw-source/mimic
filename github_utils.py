@@ -4,9 +4,7 @@ import zipfile
 import tempfile
 import shutil
 from openai import OpenAI
-from pydantic import BaseModel
 from tqdm import tqdm
-import google.generativeai as genai
 from dotenv import load_dotenv
 import os
 

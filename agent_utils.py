@@ -30,7 +30,7 @@ def generate_code():
     model="google/gemini-2.0-flash-thinking-exp:free",
     messages=[
         {"role": "user", 
-         "content": "You are a research software engineer that is tasked with writing a complete Python code snippet (using an existing simulation framework) that recreates a given human experiment from start to finish. Please add evaluation metrics to the code snippet so I can compare the performance of the code to the human experiment. The code should be able to run on a local machine. Please stick to modifying the code provided in the repository versus writing random new code. You should also include the necessary imports and any necessary dependencies. Do not include any explanations or comments. Only provide the code snippet delimited by triple backticks."},
+         "content": "You are a research software engineer that is tasked with writing a complete Python code snippet (using an existing simulation framework) that recreates a given human experiment from start to finish. Please add evaluation metrics to the code snippet so I can compare the performance of the code to the human experiment. The code should be able to run on a local machine. Please stick to modifying the code provided in the repository versus writing random new code. You should also include the necessary imports and any necessary dependencies. Do not include any explanations or comments. Only provide the code snippet delimited by triple backticks. Please use load_dotenv() to load the OPENAI_API_KEY environment variable."},
         {"role": "user", 
          "content": f"Framework Functions: {framework_functions}. Experimental Design: {experimental_design}."},
     ],
@@ -38,7 +38,28 @@ def generate_code():
     final_code = completion.choices[0].message.content
     save_file("output/final_code.py", final_code)
     remove_triple_backticks("output/final_code.py")
-    return final_code
+    return
+
+def fix_code(current_error):
+    print("Fixing code")
+    load_dotenv()
+    client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=os.getenv("OPENROUTER_API_KEY"))
+    framework_functions = read_file("knowledge/code.txt")
+    experimental_design = read_file("knowledge/paper.txt")
+    current_code = read_file("output/final_code.py")
+    completion = client.chat.completions.create(
+    model="google/gemini-2.0-flash-thinking-exp:free",
+    messages=[
+        {"role": "user", 
+         "content": "You are a research software engineer that is tasked with fixing a given Python code snippet (using an existing simulation framework) that recreates a given human experiment from start to finish. Please add evaluation metrics to the code snippet so I can compare the performance of the code to the human experiment. The code should be able to run on a local machine. Please stick to modifying the code provided in the repository versus writing random new code. You should also include the necessary imports and any necessary dependencies. Do not include any explanations or comments. Only provide the code snippet delimited by triple backticks. Please use load_dotenv() to load the OPENAI_API_KEY environment variable."},
+        {"role": "user", 
+         "content": f"Framework Functions: {framework_functions}. Experimental Design: {experimental_design}. Current Code {current_code}. Current Error: {current_error}."},
+    ],
+    )
+    final_code = completion.choices[0].message.content
+    save_file("output/final_code.py", final_code)
+    remove_triple_backticks("output/final_code.py")
+    return 
 
 if __name__ == "__main__":
     code = generate_code()

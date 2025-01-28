@@ -1,130 +1,121 @@
-import numpy as np
+import os
 import pandas as pd
 from tinytroupe.agent import TinyPerson
 from tinytroupe.environment import TinyWorld
-from datetime import timedelta
+import numpy as np
 
-def calculate_coefficient_of_convergence(prices, equilibrium_price):
-    if not prices:
-        return np.nan
-    squared_diffs = [(p - equilibrium_price)**2 for p in prices]
-    mean_squared_diff = np.mean(squared_diffs)
-    coefficient = np.sqrt(mean_squared_diff) / equilibrium_price
-    return coefficient
+os.environ["OPENAI_API_KEY"] = "YOUR_API_KEY"
 
-def run_llm_market_experiment():
-    world = TinyWorld("Double Auction Market")
-    buyers = []
-    sellers = []
-    buyer_values = [3.25, 3.00, 2.75, 2.50, 2.25, 2.00, 1.75, 1.50, 1.25, 1.00, 0.75]
-    seller_costs = [0.75, 1.00, 1.25, 1.50, 1.75, 2.00, 2.25, 2.50, 2.75, 3.00, 3.25]
+def run_ultimatum_game_simulation(stake, num_trials):
+    offers_proportions = []
+    rejection_rates = []
+    offered_amounts_list = []
+    accepted_offers_list = []
+    recipient_payoffs = []
+    allocator_payoffs = []
 
-    for i in range(11):
-        buyer = TinyPerson(name=f"Buyer_{i+1}", role="buyer", value=buyer_values[i])
-        seller = TinyPerson(name=f"Seller_{i+1}", role="seller", cost=seller_costs[i])
-        buyers.append(buyer)
-        sellers.append(seller)
-        world.add_agent(buyer)
-        world.add_agent(seller)
+    for _ in range(num_trials):
+        world = TinyWorld()
+        allocator = TinyPerson(name="Allocator")
+        recipient = TinyPerson(name="Recipient")
+        world.add_agent(allocator)
+        world.add_agent(recipient)
+        world.make_everyone_accessible()
 
-    world.make_everyone_accessible()
+        offer_prompt = f"You are the Allocator in an Ultimatum Game with a total stake of ${stake}. How much (in dollars, integer amount) do you offer to the Recipient?"
+        allocator_response = allocator.listen_and_act(offer_prompt)
 
-    num_rounds = 5
-    equilibrium_price = 2.00
-    transaction_history = []
-    convergence_coefficients = []
-    exchange_quantities_history = []
+        offered_amount = 0
+        if allocator_response and isinstance(allocator_response, list) and allocator_response:
+            response_item = allocator_response[0]
+            if isinstance(response_item, dict) and 'action_result' in response_item:
+                try:
+                    action_result = response_item['action_result']
+                    offered_amount = int("".join(filter(str.isdigit, action_result)))
+                except ValueError:
+                    offered_amount = 0
 
-    for round_num in range(num_rounds):
-        print(f"\n--- Round {round_num + 1} ---")
-        round_transactions = []
-        potential_transactions = []
+        offered_amounts_list.append(offered_amount)
+        offer_proportion = offered_amount / stake if stake > 0 else 0
+        offers_proportions.append(offer_proportion)
 
-        buyer_offers = {}
-        seller_asks = {}
+        acceptance_prompt = f"You are the Recipient in an Ultimatum Game. The Allocator offered you ${offered_amount} out of ${stake}. Do you accept or reject this offer? Answer 'accept' or 'reject'."
+        recipient_response = recipient.listen_and_act(acceptance_prompt)
 
-        world.broadcast(f"It is the beginning of trading day {round_num + 1}. Previous day's average transaction price was ${np.mean([trans['price'] for trans in round_transactions] if round_transactions else [equilibrium_price]):.2f}. Buyers, please post your bids. Sellers, please post your asks.")
-
-        for buyer in buyers:
-            bid_prompt = "Post your bid for today. As a buyer, you want to buy at the lowest possible price, but not so low that sellers reject your bid considering your value card is $" + str(buyer.get('value')) + ". Consider also the previous day's price."
-            bid_action = buyer.listen_and_act(bid_prompt)
-            bid_price_str = bid_action[0]['value'] if bid_action and bid_action[0]['value'] else "None"
-            try:
-                bid_price = float(bid_price_str.strip('$')) if bid_price_str and bid_price_str != "None" else None
-                if bid_price is not None and bid_price >= 0:
-                    buyer_offers[buyer.name] = bid_price
-                    print(f"{buyer.name} bids ${bid_price:.2f}")
+        accepted = False
+        recipient_payoff_trial = 0
+        allocator_payoff_trial = 0
+        if recipient_response and isinstance(recipient_response, list) and recipient_response:
+            response_item = recipient_response[0]
+            if isinstance(response_item, dict) and 'action_result' in response_item:
+                if "accept" in response_item['action_result'].lower():
+                    accepted = True
+                    recipient_payoff_trial = offered_amount
+                    allocator_payoff_trial = stake - offered_amount
                 else:
-                    print(f"{buyer.name} made an invalid bid.")
-                    buyer_offers[buyer.name] = None
-            except ValueError:
-                print(f"{buyer.name} made an invalid bid.")
-                buyer_offers[buyer.name] = None
+                    recipient_payoff_trial = 0
+                    allocator_payoff_trial = 0
 
+        rejection_rates.append(not accepted)
+        accepted_offers_list.append(accepted)
+        recipient_payoffs.append(recipient_payoff_trial)
+        allocator_payoffs.append(allocator_payoff_trial)
 
-        for seller in sellers:
-            ask_prompt = "Post your ask for today. As a seller, you want to sell at the highest possible price, but not so high that buyers reject your ask considering your cost card is $" + str(seller.get('cost')) + ". Consider also the previous day's price."
-            ask_action = seller.listen_and_act(ask_prompt)
-            ask_price_str = ask_action[0]['value'] if ask_action and ask_action[0]['value'] else "None"
-            try:
-                ask_price = float(ask_price_str.strip('$')) if ask_price_str and ask_price_str != "None" else None
-                if ask_price is not None and ask_price >= 0:
-                    seller_asks[seller.name] = ask_price
-                    print(f"{seller.name} asks ${ask_price:.2f}")
-                else:
-                    print(f"{seller.name} made an invalid ask.")
-                    seller_asks[seller.name] = None
-            except ValueError:
-                print(f"{seller.name} made an invalid ask.")
-                seller_asks[seller.name] = None
+    avg_offer_proportion = np.mean(offers_proportions) if num_trials > 0 else 0
+    rejection_rate = np.mean(rejection_rates) if num_trials > 0 else 0
+    std_offer_proportion = np.std(offers_proportions) if num_trials > 0 else 0
+    median_offer_proportion = np.median(offers_proportions) if num_trials > 0 else 0
+    avg_recipient_payoff = np.mean(recipient_payoffs) if num_trials > 0 else 0
+    avg_allocator_payoff = np.mean(allocator_payoffs) if num_trials > 0 else 0
 
-        potential_transactions = []
-        for buyer in buyers:
-            for seller in sellers:
-                bid = buyer_offers.get(buyer.name)
-                ask = seller_asks.get(seller.name)
-                if bid is not None and ask is not None and bid >= ask:
-                    potential_transactions.append({'buyer': buyer, 'seller': seller, 'price': (bid + ask) / 2})
+    return (avg_offer_proportion, rejection_rate, std_offer_proportion, median_offer_proportion,
+            offers_proportions, rejection_rates, offered_amounts_list, accepted_offers_list,
+            avg_recipient_payoff, avg_allocator_payoff, recipient_payoffs, allocator_payoffs)
 
-        potential_transactions.sort(key=lambda trans: trans['price'], reverse=True)
+stake_levels = [4, 10]
+num_trials_per_stake = 50
+simulation_results = {}
 
-        matched_buyers = set()
-        matched_sellers = set()
-        current_round_transactions = []
+for stake in stake_levels:
+    (avg_offer_proportion, rejection_rate, std_offer_proportion, median_offer_proportion,
+     offers_proportions, rejection_rates, offered_amounts_list, accepted_offers_list,
+     avg_recipient_payoff, avg_allocator_payoff, recipient_payoffs, allocator_payoffs) = run_ultimatum_game_simulation(stake, num_trials_per_stake)
+    simulation_results[stake] = {
+        "average_offer_proportion": avg_offer_proportion,
+        "rejection_rate": rejection_rate,
+        "std_offer_proportion": std_offer_proportion,
+        "median_offer_proportion": median_offer_proportion,
+        "offer_proportions": offers_proportions,
+        "rejection_decisions": rejection_rates,
+        "offered_amounts": offered_amounts_list,
+        "accepted_offers": accepted_offers_list,
+        "average_recipient_payoff": avg_recipient_payoff,
+        "average_allocator_payoff": avg_allocator_payoff,
+        "recipient_payoffs": recipient_payoffs,
+        "allocator_payoffs": allocator_payoffs
+    }
 
-        for transaction in potential_transactions:
-            buyer = transaction['buyer']
-            seller = transaction['seller']
-            price = transaction['price']
+print("Simulation Results:")
+for stake, results in simulation_results.items():
+    print(f"\nStake: ${stake}")
+    print(f"  Average Offer Proportion: {results['average_offer_proportion']:.2f}")
+    print(f"  Median Offer Proportion: {results['median_offer_proportion']:.2f}")
+    print(f"  Std Dev Offer Proportion: {results['std_offer_proportion']:.2f}")
+    print(f"  Rejection Rate: {results['rejection_rate']:.2f}")
+    print(f"  Average Recipient Payoff: ${results['average_recipient_payoff']:.2f}")
+    print(f"  Average Allocator Payoff: ${results['average_allocator_payoff']:.2f}")
 
-            if buyer.name not in matched_buyers and seller.name not in matched_sellers:
-                if buyer.get('value') >= price and seller.get('cost') <= price:
-                    round_transactions.append({'buyer': buyer.name, 'seller': seller.name, 'price': price})
-                    current_round_transactions.append(price)
-                    matched_buyers.add(buyer.name)
-                    matched_sellers.add(seller.name)
-                    print(f"Transaction: {buyer.name} bought from {seller.name} at ${price:.2f}")
+    offers_series = pd.Series(results['offer_proportions'])
+    offer_distribution = offers_series.value_counts(bins=10, normalize=True).sort_index()
+    print("\n  Offer Proportion Distribution:")
+    print(offer_distribution)
 
-        transaction_history.append(round_transactions)
-        exchange_quantity = len(round_transactions)
-        exchange_quantities_history.append(exchange_quantity)
-        convergence_coefficient = calculate_coefficient_of_convergence(current_round_transactions, equilibrium_price)
-        convergence_coefficients.append(convergence_coefficient)
+    accepted_offers_series = pd.Series(results['accepted_offers'])
+    acceptance_rate = accepted_offers_series.value_counts(normalize=True)
+    print("\n  Acceptance Rate:")
+    print(acceptance_rate)
 
-        print(f"Round {round_num + 1} Summary: Transactions: {exchange_quantity}, Avg. Price: ${np.mean(current_round_transactions) if current_round_transactions else 0:.2f}, Convergence Coeff: {convergence_coefficient:.2f}")
-
-    print("\n--- Experiment Summary ---")
-    avg_prices_per_round = [np.mean([trans['price'] for trans in round_txns]) if round_txns else 0 for round_txns in transaction_history]
-    convergence_df = pd.DataFrame({
-        'Round': range(1, num_rounds + 1),
-        'Avg_Transaction_Price': avg_prices_per_round,
-        'Exchange_Quantity': exchange_quantities_history,
-        'Convergence_Coefficient': convergence_coefficients
-    })
-    print(convergence_df)
-
-    return convergence_df
-
-if __name__ == '__main__':
-    results_df = run_llm_market_experiment()
-    print("\nExperiment completed. Results DataFrame is returned.")
+    offer_amounts_series = pd.Series(results['offered_amounts'])
+    descriptive_stats_offers = offer_amounts_series.describe()
+    print("\n  Descriptive Statistics of Offered Amounts:")
+    print(descriptive_stats_offers)
