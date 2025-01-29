@@ -1,121 +1,80 @@
 import os
-import pandas as pd
+from dotenv import load_dotenv
+import random
+
+load_dotenv()
+
 from tinytroupe.agent import TinyPerson
 from tinytroupe.environment import TinyWorld
-import numpy as np
+from tinytroupe.extraction import ArtifactExporter
 
-os.environ["OPENAI_API_KEY"] = "YOUR_API_KEY"
+exporter = ArtifactExporter(base_output_folder="./ultimatum_game_outputs/")
+output_file = os.path.join(exporter.base_output_folder, "ultimatum_game_results.txt")
 
-def run_ultimatum_game_simulation(stake, num_trials):
-    offers_proportions = []
-    rejection_rates = []
-    offered_amounts_list = []
-    accepted_offers_list = []
-    recipient_payoffs = []
-    allocator_payoffs = []
+num_trials = 50
+stake = 10.0
+offers_made = []
+rejection_counts = 0
+positive_offer_rejection_counts = 0
+positive_offers_made_count = 0
 
-    for _ in range(num_trials):
-        world = TinyWorld()
-        allocator = TinyPerson(name="Allocator")
-        recipient = TinyPerson(name="Recipient")
-        world.add_agent(allocator)
-        world.add_agent(recipient)
-        world.make_everyone_accessible()
+world = TinyWorld(name="UltimatumGameWorld")
 
-        offer_prompt = f"You are the Allocator in an Ultimatum Game with a total stake of ${stake}. How much (in dollars, integer amount) do you offer to the Recipient?"
-        allocator_response = allocator.listen_and_act(offer_prompt)
+for trial in range(num_trials):
+    proposer = TinyPerson(name=f"Proposer_{trial}")
+    responder = TinyPerson(name=f"Responder_{trial}")
+    world.add_agent(proposer)
+    world.add_agent(responder)
+    world.make_everyone_accessible()
 
-        offered_amount = 0
-        if allocator_response and isinstance(allocator_response, list) and allocator_response:
-            response_item = allocator_response[0]
-            if isinstance(response_item, dict) and 'action_result' in response_item:
-                try:
-                    action_result = response_item['action_result']
-                    offered_amount = int("".join(filter(str.isdigit, action_result)))
-                except ValueError:
-                    offered_amount = 0
+    proposer_instruction = f"You are Player 1 in the Ultimatum Game. You have ${stake:.2f} to split with Player 2. Decide how much to offer Player 2. Player 2 can either accept or reject your offer. If Player 2 accepts, you both get the agreed amount. If Player 2 rejects, both of you get $0. Make your offer in the format: 'I offer Player 2 ${stake:.2f}'."
+    proposer.listen_and_act(proposer_instruction)
+    proposer_action = proposer.act()
 
-        offered_amounts_list.append(offered_amount)
-        offer_proportion = offered_amount / stake if stake > 0 else 0
-        offers_proportions.append(offer_proportion)
+    offer_amount = 0.0
+    try:
+        offer_str = [action['content'] for action in proposer_action if action['tool_code'] == 'DEFAULT_UTTERANCE'][0]
+        start_index = offer_str.find('$') + 1
+        end_index = offer_str.find(' ', start_index)
+        offer_amount = float(offer_str[start_index:end_index])
+    except:
+        offer_amount = -1.0
 
-        acceptance_prompt = f"You are the Recipient in an Ultimatum Game. The Allocator offered you ${offered_amount} out of ${stake}. Do you accept or reject this offer? Answer 'accept' or 'reject'."
-        recipient_response = recipient.listen_and_act(acceptance_prompt)
+    if offer_amount >= 0:
+        offers_made.append(offer_amount)
+        responder_instruction = f"You are Player 2 in the Ultimatum Game. Player 1 has offered you ${offer_amount:.2f} out of ${stake:.2f}. Do you accept or reject this offer? If you accept, you get ${offer_amount:.2f} and Player 1 gets the rest. If you reject, both of you get $0. Respond with 'I accept' or 'I reject'."
+        responder.listen_and_act(responder_instruction)
+        responder_action = responder.act()
+        accept_reject_str = [action['content'] for action in responder_action if action['tool_code'] == 'DEFAULT_UTTERANCE'][0].lower()
 
-        accepted = False
-        recipient_payoff_trial = 0
-        allocator_payoff_trial = 0
-        if recipient_response and isinstance(recipient_response, list) and recipient_response:
-            response_item = recipient_response[0]
-            if isinstance(response_item, dict) and 'action_result' in response_item:
-                if "accept" in response_item['action_result'].lower():
-                    accepted = True
-                    recipient_payoff_trial = offered_amount
-                    allocator_payoff_trial = stake - offered_amount
-                else:
-                    recipient_payoff_trial = 0
-                    allocator_payoff_trial = 0
+        if "reject" in accept_reject_str:
+            rejection_counts += 1
+            if offer_amount > 0:
+                positive_offer_rejection_counts += 1
+                positive_offers_made_count += 1
+        elif offer_amount > 0:
+            positive_offers_made_count += 1
 
-        rejection_rates.append(not accepted)
-        accepted_offers_list.append(accepted)
-        recipient_payoffs.append(recipient_payoff_trial)
-        allocator_payoffs.append(allocator_payoff_trial)
 
-    avg_offer_proportion = np.mean(offers_proportions) if num_trials > 0 else 0
-    rejection_rate = np.mean(rejection_rates) if num_trials > 0 else 0
-    std_offer_proportion = np.std(offers_proportions) if num_trials > 0 else 0
-    median_offer_proportion = np.median(offers_proportions) if num_trials > 0 else 0
-    avg_recipient_payoff = np.mean(recipient_payoffs) if num_trials > 0 else 0
-    avg_allocator_payoff = np.mean(allocator_payoffs) if num_trials > 0 else 0
+    world.reset()
 
-    return (avg_offer_proportion, rejection_rate, std_offer_proportion, median_offer_proportion,
-            offers_proportions, rejection_rates, offered_amounts_list, accepted_offers_list,
-            avg_recipient_payoff, avg_allocator_payoff, recipient_payoffs, allocator_payoffs)
+avg_offer_percentage = (sum(offers_made) / (stake * len(offers_made))) * 100 if offers_made else 0
+modal_offer = max(set(offers_made), default=0, key=offers_made.count) if offers_made else 0
+rejection_rate = (rejection_counts / num_trials) * 100 if num_trials > 0 else 0
+positive_offer_rejection_rate = (positive_offer_rejection_counts / positive_offers_made_count) * 100 if positive_offers_made_count > 0 else 0
 
-stake_levels = [4, 10]
-num_trials_per_stake = 50
-simulation_results = {}
+evaluation_metrics = {
+    "average_offer_percentage": f"{avg_offer_percentage:.2f}%",
+    "modal_offer": f"${modal_offer:.2f}",
+    "rejection_rate": f"{rejection_rate:.2f}%",
+    "positive_offer_rejection_rate": f"{positive_offer_rejection_rate:.2f}%",
+    "number_of_trials": num_trials,
+    "stake_amount": f"${stake:.2f}"
+}
 
-for stake in stake_levels:
-    (avg_offer_proportion, rejection_rate, std_offer_proportion, median_offer_proportion,
-     offers_proportions, rejection_rates, offered_amounts_list, accepted_offers_list,
-     avg_recipient_payoff, avg_allocator_payoff, recipient_payoffs, allocator_payoffs) = run_ultimatum_game_simulation(stake, num_trials_per_stake)
-    simulation_results[stake] = {
-        "average_offer_proportion": avg_offer_proportion,
-        "rejection_rate": rejection_rate,
-        "std_offer_proportion": std_offer_proportion,
-        "median_offer_proportion": median_offer_proportion,
-        "offer_proportions": offers_proportions,
-        "rejection_decisions": rejection_rates,
-        "offered_amounts": offered_amounts_list,
-        "accepted_offers": accepted_offers_list,
-        "average_recipient_payoff": avg_recipient_payoff,
-        "average_allocator_payoff": avg_allocator_payoff,
-        "recipient_payoffs": recipient_payoffs,
-        "allocator_payoffs": allocator_payoffs
-    }
+with open(output_file, 'w') as f:
+    f.write("Ultimatum Game Simulation Results:\n")
+    for key, value in evaluation_metrics.items():
+        f.write(f"{key}: {value}\n")
 
-print("Simulation Results:")
-for stake, results in simulation_results.items():
-    print(f"\nStake: ${stake}")
-    print(f"  Average Offer Proportion: {results['average_offer_proportion']:.2f}")
-    print(f"  Median Offer Proportion: {results['median_offer_proportion']:.2f}")
-    print(f"  Std Dev Offer Proportion: {results['std_offer_proportion']:.2f}")
-    print(f"  Rejection Rate: {results['rejection_rate']:.2f}")
-    print(f"  Average Recipient Payoff: ${results['average_recipient_payoff']:.2f}")
-    print(f"  Average Allocator Payoff: ${results['average_allocator_payoff']:.2f}")
-
-    offers_series = pd.Series(results['offer_proportions'])
-    offer_distribution = offers_series.value_counts(bins=10, normalize=True).sort_index()
-    print("\n  Offer Proportion Distribution:")
-    print(offer_distribution)
-
-    accepted_offers_series = pd.Series(results['accepted_offers'])
-    acceptance_rate = accepted_offers_series.value_counts(normalize=True)
-    print("\n  Acceptance Rate:")
-    print(acceptance_rate)
-
-    offer_amounts_series = pd.Series(results['offered_amounts'])
-    descriptive_stats_offers = offer_amounts_series.describe()
-    print("\n  Descriptive Statistics of Offered Amounts:")
-    print(descriptive_stats_offers)
+print("Simulation completed. Evaluation metrics saved to 'ultimatum_game_results.txt' in 'ultimatum_game_outputs' directory.")

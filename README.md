@@ -11,8 +11,7 @@ pip install -r requirements.txt
 mv .env.txt .env
 ```
 
-#### 3. Set up Modal (for virtual sandbox to execute code)
-##### 4. Sign up for a free account at https://modal.com/signup
+#### 3. Set up Modal (for virtual sandbox to execute code), sign up for a free account and $30 in credits at https://modal.com/signup
 ```
 pip install modal
 modal setup
@@ -26,3 +25,8 @@ modal setup
 ```
 python run.py
 ```
+
+#### Notes:
+* Mimic requires a paid OpenRouter and OpenAI API key. You can get them from [OpenRouter](https://openrouter.ai/) and [OpenAI](https://openai.com/).
+* Non-subscribtable errors come from the OpenRouter API rate limiting
+* For the best results, feel free to swap OpenRouter models as you see fit (e.g., Deepseek R1)
