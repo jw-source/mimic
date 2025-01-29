@@ -1,4 +1,9 @@
 venv
-__pycache__
+**/__pycache__/
+**/.DS_Store
 .env
 !.env.txt
+knowledge/code.txt
+knowledge/paper.txt
+knowledge/paper.pdf
+output/final_code.py
