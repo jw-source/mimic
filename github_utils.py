@@ -23,22 +23,11 @@ def download_repo(url):
     os.remove(zip_path)
     return temp_dir
 
-def get_tree(directory_path):
-    result = []
-    for root, dirs, files in os.walk(directory_path):
-        level = root.replace(directory_path, '').count(os.sep)
-        indent = '│   ' * (level - 1) + '├── ' if level > 0 else ''
-        result.append(f'{indent}{os.path.basename(root)}/')
-        for file in files:
-            indent = '│   ' * level + '├── '
-            result.append(f'{indent}{file}')
-    return '\n'.join(result)
-
 def all_files(directory_path):
     result = []
     for root, dirs, files in os.walk(directory_path):
         for file in files:
-            if file.endswith('.py'):
+            if file.endswith('.py') or file.endswith('.pynb') or file.endswith('.md'):
                 result.append(os.path.join(root, file))
     return result
 
@@ -51,13 +40,13 @@ def get_file_content(file_path):
 def delete_repo(directory_path):
     shutil.rmtree(directory_path)
 
-def parameters_exist(content):
+def documentation_exist(content):
     load_dotenv()
     client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=os.getenv("OPENROUTER_API_KEY"))
-    completion = client.beta.chat.completions.parse(
-        model="openai/gpt-4o-2024-11-20",
+    completion = client.chat.completions.create(
+        model="openai/gpt-4o",
         messages=[
-            {"role": "developer", "content": "You are a code reviewer that checks if a given code snippet contains any parameters that are designed for end-user control. If so, only return the word 'True'. This does not include internal variables, developer-only settings, or any parameters that are not intended for end-user manipulation. Else return 'False'."},
+            {"role": "user", "content": "You are a research software engineer analyzing code from Github. Check if the provided content contains any documentation, such as function descriptions, parameter explanations, usage instructions, or API documentation. Only return 'True' if you find actual documentation explaining how to use the code. Return 'False' if there is no documentation or only basic code comments."},
             {
                 "role": "user",
                 "content": f"Content: {content}",
@@ -70,64 +59,34 @@ def parameters_exist(content):
     else:
         return False
 
-def concat_output(tree_content, relavant_files):
-    output = ""
-    output+= tree_content
-    line_seperator = '\n' + '-'*100 + '\n'
-    output += line_seperator
-    for file in relavant_files.keys():
-        output += f"File: {file}\n"
-        output += f"Content: {relavant_files[file]}\n"
-        output += line_seperator
-    return output
-
-def aggregate_functions(code):
-    client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=os.getenv("OPENROUTER_API_KEY"))
-    prompt = """Extract a detailed list of end-user functions from the following repository code: Please provide documentation for each function, including the name, purpose, parameters, return value."""
-    response = client.chat.completions.create(
-        model="google/gemini-2.0-flash-thinking-exp:free",
-        messages=[
-            {"role": "user", "content": prompt},
-            {"role": "user", "content": f"Code: {code}"},
-        ],
-    )
-    final = response.choices[0].message.content
-    return final
-
-def extract_examples(code):
-    client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=os.getenv("OPENROUTER_API_KEY"))
-    prompt = """Please extract a list of example use-cases from the following repository. These should be a list of code snippets separated by a new line. DO NOT MODIFY THE EXAMPLES."""
-    response = client.chat.completions.create(
-        model="google/gemini-2.0-flash-thinking-exp:free",
-        messages=[
-            {"role": "user", "content": prompt},
-            {"role": "user", "content": f"Code: {code}"},
-        ],
-    )
-    examples = response.choices[0].message.content
-    return examples
+def dict_to_text(file_dict):
+    text = ""
+    for file_path, content in file_dict.items():
+        text += f"\n=== File: {file_path} ===\n"
+        text += content
+        text += "\n\n"
+    return text
 
 def github_run(url):
     print("Running on GitHub")
     directory_path = download_repo(url)
-    tree_content = get_tree(directory_path)
     files = all_files(directory_path)
-    relavant_files = {}
+    documentation_files = {}
     for file in tqdm(files, desc="Processing files", unit="file"):
         file_content = get_file_content(file)
-        output = parameters_exist(file_content)
-        if output:
-            relavant_files[file] = get_file_content(file)
+        d_exist = documentation_exist(file_content)
+        if d_exist:
+            documentation_files[file] = get_file_content(file)
+
     delete_repo(directory_path)
-    output = concat_output(tree_content, relavant_files)
-    print("Extracting functions")
-    functions = aggregate_functions(output)
-    print("Extracting examples")
-    examples = extract_examples(output)
+
+    documentation = dict_to_text(documentation_files)
+
     with open("knowledge/code.txt", "w", encoding='utf-8') as f:
-        f.write("Functions:\n" + functions + "\n\nExamples:\n" + examples)
-    return output
+        f.write("Documentation:\n" + documentation)
+        f.close()
+    
+    return
 
 if __name__ == "__main__":
-    relevant_code = github_run("https://github.com/microsoft/TinyTroupe")
-    print(relevant_code)
+    github_run("https://github.com/microsoft/TinyTroupe")

@@ -2,6 +2,7 @@ from openai import OpenAI
 import pdfplumber
 import os
 from dotenv import load_dotenv
+from agent_utils import read_file
 
 def paper_run():
     print("Extracting experimental design")
@@ -36,6 +37,21 @@ def paper_run():
         f.write(final)
     return final
 
-if __name__ == "__main__":
-    paper = paper_run("https://arxiv.org/pdf/2409.08357v1")
-    print(paper)
+def compare_results(simulation_results):
+    print("Comparing simulation results")
+    load_dotenv()
+    client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=os.getenv("OPENROUTER_API_KEY"))
+    experimental_results = read_file("knowledge/paper.txt")
+    prompt = f"""Compare the results of the computer simulation to the results of the actual experiment described in the research paper. Provide a detailed comparison of the two sets of results, including any similarities and differences."""
+    completion = client.chat.completions.create(
+    model="openai/o3-mini",
+    messages=[
+        {"role": "user", 
+         "content": prompt},
+        {"role": "user", 
+         "content": "Simulation Results: " + simulation_results + ". Actual Results: " + experimental_results},
+    ],
+    )   
+    comparison = completion.choices[0].message.content
+    print(comparison)
+    return

@@ -7,3 +7,6 @@ knowledge/code.txt
 knowledge/paper.txt
 knowledge/paper.pdf
 output/final_code.py
+*.pkl
+*.bin
+*.pklz

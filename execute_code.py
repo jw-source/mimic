@@ -13,7 +13,9 @@ def execute_code():
             "git clone https://github.com/microsoft/TinyTroupe /root/TinyTroupe",
             "cd /root/TinyTroupe && pip install .",
             "pip install python-dotenv",
-            f"echo 'OPENAI_API_KEY={api_key}' |> /root/TinyTroupe/.env",
+            f"echo 'OPENAI_API_KEY={api_key}' > /root/TinyTroupe/.env",
+            #"echo '[Logging]' > /root/TinyTroupe/tests/config.ini",
+            #"echo 'LOGLEVEL=DEBUG' >> /root/TinyTroupe/tests/config.ini",
         )
         .add_local_file("output/final_code.py", "/root/TinyTroupe/examples/final_code.py")
     )
