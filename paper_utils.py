@@ -12,7 +12,7 @@ def paper_run():
     paper_content = ""
     for page in pdf.pages:
         paper_content += page.extract_text()
-    prompt = """Extract the experimental design from the given research paper:
+    prompt = """Extract the experimental design from the given research paper in JSON format:
     1. Goal and purpose of the experiment
     2. Independent variables and their ranges/values used
     3. Dependent variables and how they were measured
